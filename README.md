@@ -52,7 +52,7 @@ FCC Public Data (CSV)
 
 ```bash
 # Clone the repo
-git clone https://github.com/YOUR_USERNAME/broadband-pipeline.git
+git clone https://github.com/Omega741/broadband-pipeline.git
 cd broadband-pipeline
 
 # Create virtual environment
