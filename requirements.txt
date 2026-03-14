@@ -1,0 +1,17 @@
+# Ingestion
+requests==2.31.0
+pandas==2.1.4
+
+# Warehouse
+duckdb==0.10.0
+
+# Transformations
+dbt-core==1.7.4
+dbt-duckdb==1.7.2
+
+# Orchestration
+prefect==2.14.21
+
+# Utilities
+python-dotenv==1.0.0
+loguru==0.7.2

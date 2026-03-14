@@ -1,0 +1,32 @@
+# Raw data files - too large for git
+data/raw/
+data/staging/
+data/output/
+
+# DuckDB database file - generated locally
+*.db
+*.duckdb
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+.venv/
+
+# dbt
+transforms/target/
+transforms/logs/
+transforms/dbt_packages/
+
+# Prefect
+.prefect/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
