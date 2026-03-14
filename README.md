@@ -1,36 +1,42 @@
 # Broadband Access ETL Pipeline
 
 A fully local, end-to-end data engineering pipeline built on free open-source tools.
-Ingests FCC public broadband availability data, transforms it using dbt, and surfaces
-analytics on coverage gaps across the United States.
+Ingests US broadband and internet access data from the Census Bureau ACS and FCC open
+data, transforms it using dbt, and surfaces analytics on coverage gaps across the
+United States.
 
 ---
 
 ## Architecture
 
 ```
-FCC Public Data (CSV)
-        |
-        v
-  [Python Ingestion]
-  ingestion/fetch_fcc_data.py
-        |
-        v
-  data/raw/          <-- Raw layer (simulates S3 landing zone)
-        |
-        v
-  [DuckDB Warehouse]
-        |
-        v
-  [dbt Core Models]
-  staging -> marts
-        |
-        v
-  data/output/       <-- Analytics-ready layer
-        |
-        v
-  [Prefect Orchestration]
-  Schedules and monitors all steps
+Census Bureau ACS API          FCC Form 477 Open Data
+(State + County Level)         (Deployment Summary)
+        |                               |
+        └──────────────┬────────────────┘
+                       v
+             [Python Ingestion]
+        ingestion/fetch_broadband_data.py
+                       |
+                       v
+             data/raw/              <-- Raw layer (simulates S3 landing zone)
+             census_state_*.csv
+             census_county_*.csv
+             manifest_*.json
+                       |
+                       v
+             [DuckDB Warehouse]
+                       |
+                       v
+             [dbt Core Models]
+             staging -> marts
+                       |
+                       v
+             data/output/           <-- Analytics-ready layer
+                       |
+                       v
+             [Prefect Orchestration]
+             Schedules and monitors all steps
 ```
 
 ---
@@ -39,7 +45,7 @@ FCC Public Data (CSV)
 
 | Layer | Tool | Why |
 |---|---|---|
-| Ingestion | Python + Requests | Pulls FCC public data |
+| Ingestion | Python + Requests | Pulls Census ACS and FCC public data |
 | Raw Storage | Local filesystem | Simulates S3 raw bucket |
 | Warehouse | DuckDB | Zero-infra analytical DB |
 | Transformation | dbt Core | SQL modeling best practices |
@@ -60,29 +66,38 @@ python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 
 # Install dependencies
-pip install -r requirements.txt
+pip install pandas duckdb requests loguru
+pip install dbt-core dbt-duckdb prefect python-dotenv
 
 # Run the full pipeline
-python ingestion/fetch_fcc_data.py
+python ingestion/fetch_broadband_data.py
 dbt run --project-dir transforms
 python orchestration/pipeline.py
 ```
 
 ---
 
-## Data Source
+## Data Sources
 
-FCC Broadband Map public data: https://broadbandmap.fcc.gov/
-Updated annually. No API key required for public datasets.
+**Census Bureau ACS 5-Year Estimates (2022)**
+Table B28002: Presence and types of internet subscriptions by household.
+Covers all 50 states, DC, and 3200+ US counties.
+No API key required.
+https://api.census.gov/data/2022/acs/acs5
+
+**FCC Form 477 Open Data (optional)**
+Fixed broadband deployment summary by geography.
+Publicly hosted on the FCC open data portal.
+https://opendata.fcc.gov
 
 ---
 
 ## Key Analytics
 
-- Broadband coverage percentage by state
-- Provider count and market concentration per county
-- Underserved areas (below 25 Mbps download threshold)
-- Speed tier distribution across rural vs urban areas
+- Broadband penetration rate by state (households with broadband / total households)
+- Counties with lowest internet access rates (underserved identification)
+- Fiber optic vs cable vs no-internet distribution across states
+- State ranking by broadband adoption
 
 ---
 
@@ -90,21 +105,21 @@ Updated annually. No API key required for public datasets.
 
 ```
 broadband-pipeline/
-├── CLAUDE.md              # Project memory and context
+├── CLAUDE.md                       # Project memory and context
 ├── README.md
 ├── requirements.txt
 ├── .gitignore
 ├── data/
-│   ├── raw/               # Raw FCC CSVs (gitignored)
-│   ├── staging/           # Intermediate files (gitignored)
-│   └── output/            # Final exports (gitignored)
+│   ├── raw/                        # Raw CSVs + manifest (gitignored)
+│   ├── staging/                    # Intermediate files (gitignored)
+│   └── output/                     # Final exports (gitignored)
 ├── ingestion/
-│   └── fetch_fcc_data.py  # Data ingestion script
-├── transforms/            # dbt project
+│   └── fetch_broadband_data.py     # Data ingestion script
+├── transforms/                     # dbt project
 ├── orchestration/
-│   └── pipeline.py        # Prefect flow
+│   └── pipeline.py                 # Prefect flow
 └── queries/
-    └── analytics.sql      # Showcase analytical queries
+    └── analytics.sql               # Showcase analytical queries
 ```
 
 ---
