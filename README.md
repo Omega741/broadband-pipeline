@@ -2,8 +2,8 @@
 
 A fully local, end-to-end data engineering pipeline built on free open-source tools.
 Ingests US broadband and internet access data from the Census Bureau ACS and FCC open
-data, transforms it using dbt, and surfaces analytics on coverage gaps across the
-United States.
+data, transforms it through a layered SQL architecture in DuckDB, and surfaces
+analytics on coverage gaps across the United States.
 
 ---
 
@@ -48,7 +48,7 @@ Census Bureau ACS API          FCC Form 477 Open Data
 | Ingestion | Python + Requests | Pulls Census ACS and FCC public data |
 | Raw Storage | Local filesystem | Simulates S3 raw bucket |
 | Warehouse | DuckDB | Zero-infra analytical DB |
-| Transformation | dbt Core | SQL modeling best practices |
+| Transformation | Python + DuckDB SQL | Layered staging and mart models |
 | Orchestration | Prefect | Pipeline scheduling and monitoring |
 | Version Control | GitHub | Code and lineage tracking |
 
@@ -66,12 +66,12 @@ python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 
 # Install dependencies
-pip install pandas duckdb requests loguru
-pip install dbt-core dbt-duckdb prefect python-dotenv
+pip install pandas requests loguru duckdb prefect python-dotenv
 
 # Run the full pipeline
 python ingestion/fetch_broadband_data.py
-dbt run --project-dir transforms
+python ingestion/load_to_duckdb.py
+python transforms/transform.py
 python orchestration/pipeline.py
 ```
 
@@ -105,21 +105,23 @@ https://opendata.fcc.gov
 
 ```
 broadband-pipeline/
-├── CLAUDE.md                       # Project memory and context
+├── CLAUDE.md                           # Project memory and context
 ├── README.md
 ├── requirements.txt
 ├── .gitignore
 ├── data/
-│   ├── raw/                        # Raw CSVs + manifest (gitignored)
-│   ├── staging/                    # Intermediate files (gitignored)
-│   └── output/                     # Final exports (gitignored)
+│   ├── raw/                            # Raw CSVs + manifest (gitignored)
+│   ├── staging/                        # Intermediate files (gitignored)
+│   └── output/                         # Final exports (gitignored)
 ├── ingestion/
-│   └── fetch_broadband_data.py     # Data ingestion script
-├── transforms/                     # dbt project
+│   ├── fetch_broadband_data.py         # Data ingestion script
+│   └── load_to_duckdb.py              # Warehouse loader
+├── transforms/
+│   └── transform.py                    # SQL transformation layer
 ├── orchestration/
-│   └── pipeline.py                 # Prefect flow
+│   └── pipeline.py                     # Prefect flow
 └── queries/
-    └── analytics.sql               # Showcase analytical queries
+    └── analytics.sql                   # Showcase analytical queries
 ```
 
 ---
